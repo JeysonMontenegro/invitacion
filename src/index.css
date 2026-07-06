@@ -1,0 +1,14 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: #FFF7E9; }
+::selection { background: #FFD100; color: #1D1D1D; }
+
+@keyframes floatY { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-14px) } }
+@keyframes floatYbig { 0%,100% { transform: translateY(0) rotate(-2deg) } 50% { transform: translateY(-22px) rotate(2deg) } }
+@keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+@keyframes popIn { 0% { opacity: 0; transform: scale(.8) translateY(20px) } 100% { opacity: 1; transform: scale(1) translateY(0) } }
+@keyframes fadeUp { 0% { opacity: 0; transform: translateY(28px) } 100% { opacity: 1; transform: translateY(0) } }
+@keyframes spinSlow { 0% { transform: rotate(0) } 100% { transform: rotate(360deg) } }
+@keyframes confetti { 0% { transform: translateY(-10px) rotate(0); opacity: 0 } 10% { opacity: .9 } 100% { transform: translateY(90vh) rotate(540deg); opacity: 0 } }
+@keyframes pulseBtn { 0%,100% { box-shadow: 0 10px 24px rgba(229,25,55,.35) } 50% { box-shadow: 0 14px 34px rgba(229,25,55,.5) } }
+@keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
