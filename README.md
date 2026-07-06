@@ -70,11 +70,14 @@ npm run dev
 
 ## 4. Importar invitados
 
-Desde el panel de administración → **📄 Importar Excel**, sube un `.xlsx`
-con columnas como `Nombre, Teléfono, Adultos, Niños, Mensaje` (el orden y
+Desde el panel de administración → **📥 Plantilla** descarga un `.xlsx` de
+ejemplo, o sube directamente tu propio archivo con **📄 Importar Excel**
+usando columnas como `Nombre, Teléfono, Adultos, Niños` (el orden y
 mayúsculas no importan, se detectan por nombre de columna; si no hay
 encabezados, se asume ese mismo orden). A cada invitado se le asigna un
-token único automáticamente al guardarse en la base de datos.
+token único automáticamente al guardarse en la base de datos. El mensaje de
+cumpleaños ("💌 Mensaje para Pablito") no se importa — lo escribe cada
+invitado desde su propio formulario al confirmar.
 
 Para enviar la invitación a cada quien, usa los botones 🔗 (copiar link) o
 💬 (WhatsApp) de la tabla — generan `tu-dominio.com/?inv=TOKEN`.

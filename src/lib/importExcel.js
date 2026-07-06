@@ -5,8 +5,9 @@ function toNum(v) {
 
 // Parses a sheet's rows (array-of-arrays, as produced by sheet_to_json with
 // header:1) into guest objects ready to insert. Mirrors the original
-// standalone app's column-detection logic (Nombre, Teléfono, Adultos, Niños,
-// Mensaje), so any spreadsheet the family already prepared keeps working.
+// standalone app's column-detection logic (Nombre, Teléfono, Adultos, Niños).
+// The guest's birthday message is only ever written by the guest themselves
+// through the RSVP form, so it's intentionally not an importable column.
 export function parseGuestRows(arr) {
   if (!arr || !arr.length) return [];
 
@@ -19,17 +20,16 @@ export function parseGuestRows(arr) {
     }
   }
 
-  let map = { name: 0, phone: 1, adults: 2, children: 3, message: 4 };
+  let map = { name: 0, phone: 1, adults: 2, children: 3 };
   let start = 0;
   if (headerIdx >= 0) {
     const hdr = (arr[headerIdx] || []).map((c) => String(c).toLowerCase().trim());
-    map = { name: -1, phone: -1, adults: -1, children: -1, message: -1 };
+    map = { name: -1, phone: -1, adults: -1, children: -1 };
     hdr.forEach((h, i) => {
       if ((h.includes('nombre') || h.includes('name')) && map.name < 0) map.name = i;
       else if ((h.includes('tel') || h.includes('whats') || h.includes('cel') || h.includes('phone')) && map.phone < 0) map.phone = i;
       else if (h.includes('adult') && map.adults < 0) map.adults = i;
       else if ((h.includes('niñ') || h.includes('nin') || h.includes('child') || h.includes('kid')) && map.children < 0) map.children = i;
-      else if ((h.includes('mensaje') || h.includes('coment') || h.includes('message') || h.includes('nota')) && map.message < 0) map.message = i;
     });
     start = headerIdx + 1;
   }
@@ -53,7 +53,7 @@ export function parseGuestRows(arr) {
       confirmedChildren: null,
       status: 'pending',
       comments: '',
-      message: String(at(row, 'message', null) || '').trim(),
+      message: '',
     });
   }
   return guests;
@@ -62,11 +62,11 @@ export function parseGuestRows(arr) {
 export async function downloadGuestTemplate() {
   const XLSX = await import('xlsx');
   const data = [
-    ['Nombre', 'Teléfono', 'Adultos', 'Niños', 'Mensaje'],
-    ['Familia Pérez', '50255556666', 2, 1, '¡Nos encantaría acompañarlos!'],
+    ['Nombre', 'Teléfono', 'Adultos', 'Niños'],
+    ['Familia Pérez', '50255556666', 2, 1],
   ];
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{ wch: 24 }, { wch: 16 }, { wch: 10 }, { wch: 10 }, { wch: 36 }];
+  ws['!cols'] = [{ wch: 24 }, { wch: 16 }, { wch: 10 }, { wch: 10 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Invitados');
   XLSX.writeFile(wb, 'plantilla-invitados.xlsx');
