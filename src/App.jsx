@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { fetchGuestByToken, logLinkClick, getSession, onAuthStateChange } from './lib/guestsApi.js';
+import { fetchGuestByToken, fetchPublicSettings, logLinkClick, getSession, onAuthStateChange } from './lib/guestsApi.js';
 import PublicInvitation from './components/public/PublicInvitation.jsx';
 import AdminLogin from './components/admin/AdminLogin.jsx';
 import AdminDashboard from './components/admin/AdminDashboard.jsx';
+import MickeyIntro from './components/public/MickeyIntro.jsx';
 
 export default function App() {
   const params = new URLSearchParams(window.location.search);
@@ -14,6 +15,7 @@ export default function App() {
   const [guestLoading, setGuestLoading] = useState(!!token);
   const [notFound, setNotFound] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [settings, setSettings] = useState({ rsvpDeadline: null, photoUrl: null, isClosed: false });
   const clickLogged = useRef(false);
 
   useEffect(() => {
@@ -31,6 +33,10 @@ export default function App() {
       .catch(() => setNotFound(true))
       .finally(() => setGuestLoading(false));
   }, [token]);
+
+  useEffect(() => {
+    fetchPublicSettings().then(setSettings).catch(() => {});
+  }, []);
 
   useEffect(() => {
     getSession().then((session) => {
@@ -69,12 +75,18 @@ export default function App() {
   }
 
   return (
-    <PublicInvitation
-      guest={guest}
-      token={token}
-      loading={guestLoading}
-      notFound={notFound}
-      onGoLogin={goLogin}
-    />
+    <>
+      <MickeyIntro />
+      <PublicInvitation
+        guest={guest}
+        token={token}
+        loading={guestLoading}
+        notFound={notFound}
+        onGoLogin={goLogin}
+        photoUrl={settings.photoUrl}
+        rsvpDeadline={settings.rsvpDeadline}
+        isClosed={settings.isClosed}
+      />
+    </>
   );
 }

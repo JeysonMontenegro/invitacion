@@ -89,6 +89,18 @@ export async function logLinkClick(token) {
   await supabase.rpc('log_guest_link_click', { p_token: token });
 }
 
+// Public settings visible to every guest: the baby photo, the RSVP deadline
+// label, and whether the confirmation window has already closed.
+export async function fetchPublicSettings() {
+  const { data, error } = await supabase.rpc('get_public_settings').maybeSingle();
+  if (error) throw error;
+  return {
+    rsvpDeadline: data?.rsvp_deadline || null,
+    photoUrl: data?.photo_url || null,
+    isClosed: !!data?.is_closed,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Admin auth (Supabase Auth — password-only UI, fixed internal email)
 // ---------------------------------------------------------------------------
@@ -194,4 +206,53 @@ export function subscribeToLinkClicks(onChange) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_link_clicks' }, onChange)
     .subscribe();
   return () => supabase.removeChannel(channel);
+}
+
+// ---------------------------------------------------------------------------
+// Admin: general settings — RSVP deadline + baby photo (requires auth session)
+// ---------------------------------------------------------------------------
+const PHOTO_BUCKET = 'public-assets';
+const PHOTO_PATH = 'pablo-antonio';
+
+export async function fetchAdminSettings() {
+  const { data, error } = await supabase
+    .from('app_settings')
+    .select('rsvp_deadline, photo_url, photo_updated_at')
+    .eq('id', true)
+    .single();
+  if (error) throw error;
+  return {
+    rsvpDeadline: data.rsvp_deadline || null,
+    photoUrl: data.photo_url || null,
+    photoUpdatedAt: data.photo_updated_at ? new Date(data.photo_updated_at).getTime() : null,
+  };
+}
+
+export async function updateRsvpDeadline(dateStringOrNull) {
+  const { error } = await supabase
+    .from('app_settings')
+    .update({ rsvp_deadline: dateStringOrNull })
+    .eq('id', true);
+  if (error) throw error;
+}
+
+export async function uploadPabloPhoto(file) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${PHOTO_PATH}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, file, { upsert: true, cacheControl: '3600', contentType: file.type });
+  if (uploadError) throw uploadError;
+
+  const { data: publicUrlData } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path);
+  const photoUrl = publicUrlData.publicUrl;
+
+  const { error: updateError } = await supabase
+    .from('app_settings')
+    .update({ photo_url: photoUrl, photo_updated_at: new Date().toISOString() })
+    .eq('id', true);
+  if (updateError) throw updateError;
+
+  return photoUrl;
 }

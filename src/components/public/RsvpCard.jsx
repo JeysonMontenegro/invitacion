@@ -16,7 +16,7 @@ function rsvpSeg(active, bg) {
   };
 }
 
-export default function RsvpCard({ guest, token, loading, notFound }) {
+export default function RsvpCard({ guest, token, loading, notFound, rsvpDeadline, isClosed }) {
   const personalized = !!guest;
   const maxAdults = guest?.expectedAdults ?? 0;
   const maxChildren = guest?.expectedChildren ?? 0;
@@ -35,7 +35,12 @@ export default function RsvpCard({ guest, token, loading, notFound }) {
     setAdults(Math.min(guest.expectedAdults, guest.confirmedAdults ?? guest.expectedAdults));
     setChildren(Math.min(guest.expectedChildren, guest.confirmedChildren ?? guest.expectedChildren));
     setMessage(guest.message || '');
+    setSubmitted(guest.status !== 'pending');
   }, [guest]);
+
+  const deadlineLabel = rsvpDeadline
+    ? new Date(`${rsvpDeadline}T00:00:00`).toLocaleDateString('es-GT', { day: 'numeric', month: 'long' })
+    : null;
 
   const isAttendingForm = status === 'attending';
 
@@ -52,7 +57,9 @@ export default function RsvpCard({ guest, token, loading, notFound }) {
       });
       setSubmitted(true);
     } catch (e) {
-      setFormError('No se pudo guardar tu confirmación. Intenta de nuevo.');
+      setFormError(e?.message?.includes('confirmación ha terminado')
+        ? 'El periodo de confirmación ya terminó.'
+        : 'No se pudo guardar tu confirmación. Intenta de nuevo.');
     } finally {
       setSubmitting(false);
     }
@@ -88,13 +95,25 @@ export default function RsvpCard({ guest, token, loading, notFound }) {
         <div style={{ position: 'absolute', top: -10, right: 14, width: 44, height: 44, borderRadius: '50%', background: '#1D1D1D' }} />
         <div style={{ position: 'absolute', top: -10, right: 64, width: 44, height: 44, borderRadius: '50%', background: '#1D1D1D' }} />
 
-        {!submitted && (
+        {isClosed && (
+          <div style={{ position: 'relative', textAlign: 'center', padding: '14px 6px' }}>
+            <div style={{ width: 88, height: 88, margin: '0 auto 16px', borderRadius: '50%', background: 'rgba(255,255,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44, border: '2px solid rgba(255,255,255,.4)' }}>⏰</div>
+            <h2 style={{ fontFamily: "'Baloo 2'", fontWeight: 800, color: '#fff', fontSize: 26, margin: '0 0 10px' }}>Lo sentimos</h2>
+            <p style={{ color: '#FFE7A6', fontSize: 16, maxWidth: 360, margin: '0 auto', lineHeight: 1.5 }}>
+              El periodo de confirmación terminó{deadlineLabel ? ` el ${deadlineLabel}` : ''}. Si tienes dudas, contacta directamente a la familia. 💛
+            </p>
+          </div>
+        )}
+
+        {!isClosed && !submitted && (
           <div style={{ position: 'relative' }}>
             <h2 style={{ fontFamily: "'Baloo 2'", fontWeight: 800, color: '#fff', fontSize: 27, textAlign: 'center', margin: '0 0 4px' }}>Confirma tu asistencia</h2>
             <p style={{ textAlign: 'center', color: '#FFE7A6', margin: '0 0 10px', fontSize: 15 }}>Ayúdanos a preparar todo para recibirte 🎁</p>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '0 auto 20px', background: '#FFD100', color: '#1D1D1D', width: 'fit-content', padding: '8px 16px', borderRadius: 999, fontFamily: "'Fredoka'", fontWeight: 700, fontSize: 14 }}>
-              🗓️ Confirma antes del 28 de julio
-            </div>
+            {deadlineLabel && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '0 auto 20px', background: '#FFD100', color: '#1D1D1D', width: 'fit-content', padding: '8px 16px', borderRadius: 999, fontFamily: "'Fredoka'", fontWeight: 700, fontSize: 14 }}>
+                🗓️ Confirma antes del {deadlineLabel}
+              </div>
+            )}
 
             <div style={{ display: 'grid', gap: 14 }}>
               {!personalized && (
@@ -179,7 +198,7 @@ export default function RsvpCard({ guest, token, loading, notFound }) {
           </div>
         )}
 
-        {submitted && (
+        {!isClosed && submitted && (
           <div style={{ position: 'relative', textAlign: 'center', padding: '14px 6px' }}>
             <div style={{ width: 88, height: 88, margin: '0 auto 16px', borderRadius: '50%', background: '#FFD100', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44, boxShadow: '0 10px 24px rgba(0,0,0,.2)', animation: 'popIn .6s ease both' }}>🎈</div>
             <h2 style={{ fontFamily: "'Baloo 2'", fontWeight: 800, color: '#fff', fontSize: 26, margin: '0 0 10px' }}>¡Gracias por confirmar!</h2>

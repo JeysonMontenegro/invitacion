@@ -156,9 +156,19 @@ declare
   g public.guests;
   final_adults integer;
   final_children integer;
+  v_deadline date;
+  v_cutoff timestamptz;
 begin
   if p_status not in ('attending', 'not_attending') then
     raise exception 'Estado inválido';
+  end if;
+
+  select rsvp_deadline into v_deadline from public.app_settings where id = true;
+  if v_deadline is not null then
+    v_cutoff := (v_deadline + 1)::timestamp at time zone 'America/Guatemala';
+    if now() >= v_cutoff then
+      raise exception 'El periodo de confirmación ha terminado';
+    end if;
   end if;
 
   select * into g from public.guests where token = p_token;
@@ -274,6 +284,94 @@ begin
     alter publication supabase_realtime add table public.guest_link_clicks;
   end if;
 end $$;
+
+-- ============================================================================
+-- Configuración general: foto de Pablo y fecha límite de confirmación
+-- Tabla de una sola fila (patrón "singleton": id boolean, siempre true)
+-- ============================================================================
+create table if not exists public.app_settings (
+  id                boolean primary key default true,
+  rsvp_deadline     date,
+  photo_url         text,
+  photo_updated_at  timestamptz,
+  updated_at        timestamptz not null default now(),
+  constraint app_settings_singleton check (id)
+);
+
+insert into public.app_settings (id) values (true)
+  on conflict (id) do nothing;
+
+alter table public.app_settings enable row level security;
+
+drop policy if exists "authenticated_full_access_settings" on public.app_settings;
+create policy "authenticated_full_access_settings" on public.app_settings
+  for all
+  to authenticated
+  using (true)
+  with check (true);
+
+revoke all on public.app_settings from anon;
+grant select, update on public.app_settings to authenticated;
+
+create or replace function public.app_settings_before_update()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_app_settings_before_update on public.app_settings;
+create trigger trg_app_settings_before_update
+  before update on public.app_settings
+  for each row execute function public.app_settings_before_update();
+
+-- RPC pública: solo expone lo que la invitación pública necesita saber
+-- (nunca la fila completa de app_settings).
+create or replace function public.get_public_settings()
+returns table (
+  rsvp_deadline date,
+  photo_url text,
+  is_closed boolean
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    s.rsvp_deadline,
+    s.photo_url,
+    case
+      when s.rsvp_deadline is null then false
+      else now() >= ((s.rsvp_deadline + 1)::timestamp at time zone 'America/Guatemala')
+    end as is_closed
+  from public.app_settings s
+  where s.id = true;
+$$;
+
+grant execute on function public.get_public_settings() to anon, authenticated;
+
+-- ============================================================================
+-- Storage: bucket público para la foto de Pablo (solo admin puede escribir)
+-- ============================================================================
+insert into storage.buckets (id, name, public)
+values ('public-assets', 'public-assets', true)
+on conflict (id) do nothing;
+
+drop policy if exists "public_read_assets" on storage.objects;
+create policy "public_read_assets" on storage.objects
+  for select
+  to public
+  using (bucket_id = 'public-assets');
+
+drop policy if exists "authenticated_manage_assets" on storage.objects;
+create policy "authenticated_manage_assets" on storage.objects
+  for all
+  to authenticated
+  using (bucket_id = 'public-assets')
+  with check (bucket_id = 'public-assets');
 
 -- ----------------------------------------------------------------------------
 -- (Opcional) Datos de ejemplo — bórralos o coméntalos si no los quieres

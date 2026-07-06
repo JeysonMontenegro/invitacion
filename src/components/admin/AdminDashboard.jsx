@@ -6,6 +6,7 @@ import { readWorkbookRows, parseGuestRows, downloadGuestTemplate } from '../../l
 import { filterBtnStyle, badgeStyle, statusLabel, fmtDate } from '../../lib/adminStyles.js';
 import GuestModal from './GuestModal.jsx';
 import ClickLogModal from './ClickLogModal.jsx';
+import SettingsModal from './SettingsModal.jsx';
 
 function linkFor(token) {
   return `${location.origin}${location.pathname}?inv=${token}`;
@@ -23,6 +24,7 @@ export default function AdminDashboard({ onBackPublic }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState(null);
   const [viewingClicksFor, setViewingClicksFor] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [toast, setToast] = useState('');
   const toastTimer = useRef(null);
   const fileInputRef = useRef(null);
@@ -157,7 +159,10 @@ export default function AdminDashboard({ onBackPublic }) {
             <div style={{ fontSize: 12, color: '#FFD100' }}>Control de invitados</div>
           </div>
         </div>
-        <button type="button" onClick={handleLogout} style={{ background: 'rgba(255,255,255,.12)', color: '#fff', border: 'none', borderRadius: 999, padding: '9px 16px', fontFamily: "'Fredoka'", fontSize: 13, cursor: 'pointer' }}>Salir</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" onClick={() => setSettingsOpen(true)} style={{ background: 'rgba(255,255,255,.12)', color: '#fff', border: 'none', borderRadius: 999, padding: '9px 16px', fontFamily: "'Fredoka'", fontSize: 13, cursor: 'pointer' }}>⚙️ Configuración</button>
+          <button type="button" onClick={handleLogout} style={{ background: 'rgba(255,255,255,.12)', color: '#fff', border: 'none', borderRadius: 999, padding: '9px 16px', fontFamily: "'Fredoka'", fontSize: 13, cursor: 'pointer' }}>Salir</button>
+        </div>
       </div>
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '22px 18px 0' }}>
@@ -295,6 +300,10 @@ export default function AdminDashboard({ onBackPublic }) {
           clicks={clicks.filter((c) => c.guestId === viewingClicksFor.id).sort((a, b) => (b.clickedAt || 0) - (a.clickedAt || 0))}
           onClose={() => setViewingClicksFor(null)}
         />
+      )}
+
+      {settingsOpen && (
+        <SettingsModal onClose={() => setSettingsOpen(false)} showToast={showToast} />
       )}
 
       {!!toast && (

@@ -12,3 +12,9 @@ body { background: #FFF7E9; }
 @keyframes confetti { 0% { transform: translateY(-10px) rotate(0); opacity: 0 } 10% { opacity: .9 } 100% { transform: translateY(90vh) rotate(540deg); opacity: 0 } }
 @keyframes pulseBtn { 0%,100% { box-shadow: 0 10px 24px rgba(229,25,55,.35) } 50% { box-shadow: 0 14px 34px rgba(229,25,55,.5) } }
 @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+
+@keyframes mickeyPopIn { 0% { opacity: 0; transform: scale(.3) } 65% { opacity: 1; transform: scale(1.08) } 100% { opacity: 1; transform: scale(1) } }
+@keyframes mickeyEarOpenLeft { 0% { transform: translate(0,0) rotate(0); opacity: 1 } 100% { transform: translate(-140vw,-90vh) rotate(-55deg); opacity: 0 } }
+@keyframes mickeyEarOpenRight { 0% { transform: translate(0,0) rotate(0); opacity: 1 } 100% { transform: translate(140vw,-90vh) rotate(55deg); opacity: 0 } }
+@keyframes mickeyFaceOpen { 0% { transform: scale(1); opacity: 1 } 100% { transform: scale(2.8); opacity: 0 } }
+@keyframes mickeyOverlayOut { 0% { opacity: 1; visibility: visible } 99% { opacity: 0; visibility: visible } 100% { opacity: 0; visibility: hidden } }

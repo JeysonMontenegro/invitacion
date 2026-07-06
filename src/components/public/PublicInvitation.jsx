@@ -3,7 +3,7 @@ import RsvpCard from './RsvpCard.jsx';
 
 const TARGET = new Date('2026-08-08T08:00:00').getTime();
 
-export default function PublicInvitation({ guest, token, loading, notFound, onGoLogin }) {
+export default function PublicInvitation({ guest, token, loading, notFound, onGoLogin, photoUrl, rsvpDeadline, isClosed }) {
   const cd = useCountdown(TARGET);
   const personalized = !!guest;
 
@@ -36,10 +36,16 @@ export default function PublicInvitation({ guest, token, loading, notFound, onGo
           <div style={{ position: 'relative', width: 224, height: 224, margin: '26px auto 8px', animation: 'popIn .7s ease both .1s' }}>
             <div style={{ position: 'absolute', top: -34, left: -8, width: 104, height: 104, borderRadius: '50%', background: '#1D1D1D', boxShadow: '0 8px 18px rgba(0,0,0,.18)' }} />
             <div style={{ position: 'absolute', top: -34, right: -8, width: 104, height: 104, borderRadius: '50%', background: '#1D1D1D', boxShadow: '0 8px 18px rgba(0,0,0,.18)' }} />
-            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'repeating-linear-gradient(135deg,#FFE7A6 0 14px,#FFDF8C 14px 28px)', border: '7px solid #1D1D1D', boxShadow: '0 16px 34px rgba(0,0,0,.16)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              <div style={{ fontSize: 44 }}>👶</div>
-              <div style={{ fontFamily: "'Baloo 2'", fontWeight: 700, color: '#C1121F', fontSize: 16, marginTop: 2 }}>Pablo Antonio</div>
-              <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#8a6d3b', marginTop: 2 }}>[ foto del bebé ]</div>
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: photoUrl ? '#fff' : 'repeating-linear-gradient(135deg,#FFE7A6 0 14px,#FFDF8C 14px 28px)', border: '7px solid #1D1D1D', boxShadow: '0 16px 34px rgba(0,0,0,.16)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              {photoUrl ? (
+                <img src={photoUrl} alt="Pablo Antonio" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <>
+                  <div style={{ fontSize: 44 }}>👶</div>
+                  <div style={{ fontFamily: "'Baloo 2'", fontWeight: 700, color: '#C1121F', fontSize: 16, marginTop: 2 }}>Pablo Antonio</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#8a6d3b', marginTop: 2 }}>[ foto del bebé ]</div>
+                </>
+              )}
             </div>
             <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', width: 44, height: 24, borderRadius: '50%', background: '#E51937', boxShadow: '0 4px 10px rgba(229,25,55,.4)' }} />
           </div>
@@ -136,7 +142,7 @@ export default function PublicInvitation({ guest, token, loading, notFound, onGo
         </div>
 
         {/* RSVP */}
-        <RsvpCard guest={guest} token={token} loading={loading} notFound={notFound} />
+        <RsvpCard guest={guest} token={token} loading={loading} notFound={notFound} rsvpDeadline={rsvpDeadline} isClosed={isClosed} />
 
         {/* FOOTER */}
         <div style={{ textAlign: 'center', marginTop: 44, padding: '0 22px' }}>
