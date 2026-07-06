@@ -50,7 +50,7 @@ export default function PublicInvitation({ guest, token, loading, notFound, onGo
             <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', width: 44, height: 24, borderRadius: '50%', background: '#E51937', boxShadow: '0 4px 10px rgba(229,25,55,.4)' }} />
           </div>
 
-          <div style={{ fontFamily: "'Fredoka'", fontWeight: 600, color: '#8a6d3b', fontSize: 14, letterSpacing: '.02em', marginTop: 10, animation: 'fadeUp .7s ease both .1s' }}>
+          <div style={{ fontFamily: "'Fredoka'", fontWeight: 700, color: '#8a6d3b', fontSize: 'clamp(19px,5vw,24px)', letterSpacing: '.02em', marginTop: 12, animation: 'fadeUp .7s ease both .1s' }}>
             Pablo Antonio Montenegro Casados
           </div>
 
