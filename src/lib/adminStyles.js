@@ -20,6 +20,31 @@ export function statusLabel(status) {
   return status === 'attending' ? '✅ Asistirá' : (status === 'not_attending' ? '🚫 No asistirá' : '⏳ Pendiente');
 }
 
+export function parseDevice(userAgent) {
+  const ua = userAgent || '';
+  if (!ua || ua === 'desconocido') return 'Desconocido';
+
+  let os = '';
+  if (/iPhone/i.test(ua)) os = 'iPhone';
+  else if (/iPad/i.test(ua)) os = 'iPad';
+  else if (/Android/i.test(ua)) os = 'Android';
+  else if (/Windows/i.test(ua)) os = 'Windows';
+  else if (/Macintosh|Mac OS X/i.test(ua)) os = 'Mac';
+  else if (/Linux/i.test(ua)) os = 'Linux';
+  else os = 'Otro dispositivo';
+
+  let browser = '';
+  if (/Edg\//i.test(ua)) browser = 'Edge';
+  else if (/OPR\/|Opera/i.test(ua)) browser = 'Opera';
+  else if (/Chrome\//i.test(ua)) browser = 'Chrome';
+  else if (/CriOS/i.test(ua)) browser = 'Chrome';
+  else if (/Firefox\//i.test(ua)) browser = 'Firefox';
+  else if (/Safari\//i.test(ua)) browser = 'Safari';
+  else browser = '';
+
+  return browser ? `${os} · ${browser}` : os;
+}
+
 export function fmtDate(ts) {
   if (!ts) return '—';
   try {

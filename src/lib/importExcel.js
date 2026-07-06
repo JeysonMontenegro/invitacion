@@ -59,6 +59,19 @@ export function parseGuestRows(arr) {
   return guests;
 }
 
+export async function downloadGuestTemplate() {
+  const XLSX = await import('xlsx');
+  const data = [
+    ['Nombre', 'Teléfono', 'Adultos', 'Niños', 'Mensaje'],
+    ['Familia Pérez', '50255556666', 2, 1, '¡Nos encantaría acompañarlos!'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 24 }, { wch: 16 }, { wch: 10 }, { wch: 10 }, { wch: 36 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Invitados');
+  XLSX.writeFile(wb, 'plantilla-invitados.xlsx');
+}
+
 export async function readWorkbookRows(file) {
   const XLSX = await import('xlsx');
   return new Promise((resolve, reject) => {

@@ -192,7 +192,88 @@ grant execute on function public.submit_rsvp(text, text, integer, integer, text,
 -- ----------------------------------------------------------------------------
 -- Tiempo real: permitir que el panel de administración reciba cambios en vivo
 -- ----------------------------------------------------------------------------
-alter publication supabase_realtime add table public.guests;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'guests'
+  ) then
+    alter publication supabase_realtime add table public.guests;
+  end if;
+end $$;
+
+-- ============================================================================
+-- Registro de clics en el enlace personal de cada invitado
+-- ============================================================================
+create table if not exists public.guest_link_clicks (
+  id          bigint generated always as identity primary key,
+  guest_id    bigint not null references public.guests(id) on delete cascade,
+  clicked_at  timestamptz not null default now(),
+  user_agent  text,
+  ip          text
+);
+
+create index if not exists guest_link_clicks_guest_id_idx on public.guest_link_clicks (guest_id);
+
+alter table public.guest_link_clicks enable row level security;
+
+drop policy if exists "authenticated_read_clicks" on public.guest_link_clicks;
+create policy "authenticated_read_clicks" on public.guest_link_clicks
+  for select
+  to authenticated
+  using (true);
+
+revoke all on public.guest_link_clicks from anon;
+grant select on public.guest_link_clicks to authenticated;
+
+-- RPC pública: registra un clic al enlace personal. Toma IP y user-agent de
+-- los headers originales de la petición HTTP (expuestos por PostgREST vía
+-- current_setting('request.headers')), no de lo que el navegador reporte.
+create or replace function public.log_guest_link_click(p_token text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_guest_id bigint;
+  v_headers json;
+  v_ua text;
+  v_ip text;
+begin
+  select id into v_guest_id from public.guests where token = p_token;
+  if v_guest_id is null then
+    return;
+  end if;
+
+  begin
+    v_headers := nullif(current_setting('request.headers', true), '')::json;
+  exception when others then
+    v_headers := null;
+  end;
+
+  v_ua := coalesce(v_headers->>'user-agent', 'desconocido');
+  v_ip := coalesce(v_headers->>'x-forwarded-for', v_headers->>'cf-connecting-ip', 'desconocida');
+  if v_ip like '%,%' then
+    v_ip := trim(split_part(v_ip, ',', 1));
+  end if;
+
+  insert into public.guest_link_clicks (guest_id, user_agent, ip)
+  values (v_guest_id, v_ua, v_ip);
+end;
+$$;
+
+grant execute on function public.log_guest_link_click(text) to anon, authenticated;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'guest_link_clicks'
+  ) then
+    alter publication supabase_realtime add table public.guest_link_clicks;
+  end if;
+end $$;
 
 -- ----------------------------------------------------------------------------
 -- (Opcional) Datos de ejemplo — bórralos o coméntalos si no los quieres

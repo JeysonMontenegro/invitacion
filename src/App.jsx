@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { fetchGuestByToken, getSession, onAuthStateChange } from './lib/guestsApi.js';
+import { useEffect, useRef, useState } from 'react';
+import { fetchGuestByToken, logLinkClick, getSession, onAuthStateChange } from './lib/guestsApi.js';
 import PublicInvitation from './components/public/PublicInvitation.jsx';
 import AdminLogin from './components/admin/AdminLogin.jsx';
 import AdminDashboard from './components/admin/AdminDashboard.jsx';
@@ -14,6 +14,7 @@ export default function App() {
   const [guestLoading, setGuestLoading] = useState(!!token);
   const [notFound, setNotFound] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const clickLogged = useRef(false);
 
   useEffect(() => {
     if (!token) return;
@@ -22,6 +23,10 @@ export default function App() {
       .then((g) => {
         setGuest(g);
         setNotFound(!g);
+        if (g && !clickLogged.current) {
+          clickLogged.current = true;
+          logLinkClick(token).catch(() => {});
+        }
       })
       .catch(() => setNotFound(true))
       .finally(() => setGuestLoading(false));

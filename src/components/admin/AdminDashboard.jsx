@@ -1,23 +1,37 @@
 import { useMemo, useRef, useState } from 'react';
 import { useGuests } from '../../hooks/useGuests.js';
+import { useLinkClicks } from '../../hooks/useLinkClicks.js';
 import { createGuest, updateGuest, deleteGuest, bulkInsertGuests, adminSignOut } from '../../lib/guestsApi.js';
-import { readWorkbookRows, parseGuestRows } from '../../lib/importExcel.js';
+import { readWorkbookRows, parseGuestRows, downloadGuestTemplate } from '../../lib/importExcel.js';
 import { filterBtnStyle, badgeStyle, statusLabel, fmtDate } from '../../lib/adminStyles.js';
 import GuestModal from './GuestModal.jsx';
+import ClickLogModal from './ClickLogModal.jsx';
 
 function linkFor(token) {
   return `${location.origin}${location.pathname}?inv=${token}`;
 }
 
+function invitationMessage(token) {
+  return '¡Hola! 🎉 Estás invitado al primer cumpleaños de Pablo Antonio. Confirma tu asistencia aquí: ' + linkFor(token);
+}
+
 export default function AdminDashboard({ onBackPublic }) {
   const { guests, loading } = useGuests(true);
+  const clicks = useLinkClicks(true);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState(null);
+  const [viewingClicksFor, setViewingClicksFor] = useState(null);
   const [toast, setToast] = useState('');
   const toastTimer = useRef(null);
   const fileInputRef = useRef(null);
+
+  const clickCounts = useMemo(() => {
+    const map = {};
+    for (const c of clicks) map[c.guestId] = (map[c.guestId] || 0) + 1;
+    return map;
+  }, [clicks]);
 
   function showToast(msg) {
     setToast(msg);
@@ -85,11 +99,30 @@ export default function AdminDashboard({ onBackPublic }) {
   }
 
   function whatsapp(g) {
-    const url = linkFor(g.token);
-    const text = encodeURIComponent('¡Hola! 🎉 Estás invitado al primer cumpleaños de Pablo Antonio. Confirma tu asistencia aquí: ' + url);
+    const text = encodeURIComponent(invitationMessage(g.token));
     const phone = (g.phone || '').replace(/\D/g, '');
     const base = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
     window.open(base, '_blank');
+  }
+
+  function copyMessage(g) {
+    const text = invitationMessage(g.token);
+    try {
+      navigator.clipboard.writeText(text).then(
+        () => showToast('📋 ¡Mensaje copiado!'),
+        () => showToast('📋 ' + text)
+      );
+    } catch (e) {
+      showToast('📋 ' + text);
+    }
+  }
+
+  async function handleDownloadTemplate() {
+    try {
+      await downloadGuestTemplate();
+    } catch (e) {
+      showToast('⚠️ No se pudo generar la plantilla');
+    }
   }
 
   async function onImportFile(e) {
@@ -170,6 +203,7 @@ export default function AdminDashboard({ onBackPublic }) {
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input ref={fileInputRef} id="xlsx-import" type="file" accept=".xlsx,.xls,.csv" onChange={onImportFile} style={{ display: 'none' }} />
+            <button type="button" onClick={handleDownloadTemplate} style={{ background: '#fff', color: '#8a6d3b', border: '2px solid #EFE3C7', borderRadius: 999, padding: '11px 18px', fontFamily: "'Fredoka'", fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>📥 Plantilla</button>
             <button type="button" onClick={() => fileInputRef.current?.click()} style={{ background: '#1D1D1D', color: '#FFD100', border: 'none', borderRadius: 999, padding: '11px 18px', fontFamily: "'Fredoka'", fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>📄 Importar Excel</button>
             <button type="button" onClick={openNew} style={{ background: '#E51937', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 20px', fontFamily: "'Fredoka'", fontWeight: 600, fontSize: 15, cursor: 'pointer', boxShadow: '0 8px 18px rgba(229,25,55,.3)' }}>+ Agregar</button>
           </div>
@@ -182,7 +216,7 @@ export default function AdminDashboard({ onBackPublic }) {
 
         <div style={{ marginTop: 16, background: '#fff', borderRadius: 22, boxShadow: '0 10px 28px rgba(0,0,0,.05)', overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 820 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
               <thead>
                 <tr style={{ background: '#FBF3E0', textAlign: 'left' }}>
                   <th style={{ padding: '14px 16px', fontFamily: "'Fredoka'", fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8a6d3b' }}>Invitado</th>
@@ -191,6 +225,7 @@ export default function AdminDashboard({ onBackPublic }) {
                   <th style={{ padding: '14px 10px', fontFamily: "'Fredoka'", fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8a6d3b', textAlign: 'center' }}>Niños</th>
                   <th style={{ padding: '14px 10px', fontFamily: "'Fredoka'", fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8a6d3b' }}>Mensaje / notas</th>
                   <th style={{ padding: '14px 10px', fontFamily: "'Fredoka'", fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8a6d3b' }}>Confirmó</th>
+                  <th style={{ padding: '14px 10px', fontFamily: "'Fredoka'", fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8a6d3b', textAlign: 'center' }}>Clics</th>
                   <th style={{ padding: '14px 16px', fontFamily: "'Fredoka'", fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8a6d3b', textAlign: 'right' }}>Acciones</th>
                 </tr>
               </thead>
@@ -212,9 +247,25 @@ export default function AdminDashboard({ onBackPublic }) {
                       {[g.message ? `💌 ${g.message}` : '', g.comments || ''].filter(Boolean).join('  ·  ') || '—'}
                     </td>
                     <td style={{ padding: '14px 10px', color: '#8a6d3b', fontSize: 13, whiteSpace: 'nowrap' }}>{fmtDate(g.confirmedAt)}</td>
+                    <td style={{ padding: '14px 10px', textAlign: 'center' }}>
+                      <button
+                        type="button"
+                        title="Ver historial de clics"
+                        onClick={() => setViewingClicksFor(g)}
+                        style={{
+                          minWidth: 36, height: 32, padding: '0 10px', border: 'none', borderRadius: 999,
+                          background: clickCounts[g.id] ? '#E7EEFB' : '#F3EAD6',
+                          color: clickCounts[g.id] ? '#2B4C9B' : '#a08a63',
+                          fontFamily: "'Fredoka'", fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                        }}
+                      >
+                        👁️ {clickCounts[g.id] || 0}
+                      </button>
+                    </td>
                     <td style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                         <button type="button" title="Copiar link" onClick={() => copyLink(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#FFF1D6', cursor: 'pointer', fontSize: 15 }}>🔗</button>
+                        <button type="button" title="Copiar mensaje de invitación" onClick={() => copyMessage(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#F1E9FB', cursor: 'pointer', fontSize: 15 }}>📋</button>
                         <button type="button" title="WhatsApp" onClick={() => whatsapp(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#DDF3E4', cursor: 'pointer', fontSize: 15 }}>💬</button>
                         <button type="button" title="Editar" onClick={() => openEdit(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#E7EEFB', cursor: 'pointer', fontSize: 15 }}>✏️</button>
                         <button type="button" title="Eliminar" onClick={() => handleDelete(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#FBE0E3', cursor: 'pointer', fontSize: 15 }}>🗑️</button>
@@ -236,6 +287,14 @@ export default function AdminDashboard({ onBackPublic }) {
 
       {modalOpen && (
         <GuestModal guest={editingGuest} onClose={closeModal} onSave={handleSave} />
+      )}
+
+      {viewingClicksFor && (
+        <ClickLogModal
+          guest={viewingClicksFor}
+          clicks={clicks.filter((c) => c.guestId === viewingClicksFor.id).sort((a, b) => (b.clickedAt || 0) - (a.clickedAt || 0))}
+          onClose={() => setViewingClicksFor(null)}
+        />
       )}
 
       {!!toast && (

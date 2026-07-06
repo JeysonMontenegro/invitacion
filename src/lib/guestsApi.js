@@ -82,6 +82,13 @@ export async function submitRsvp(token, { status, adults, children, message, com
   return data;
 }
 
+// Registers a visit to a guest's personal link (device + IP are captured
+// server-side from the real HTTP request headers, not from the browser).
+export async function logLinkClick(token) {
+  if (!token) return;
+  await supabase.rpc('log_guest_link_click', { p_token: token });
+}
+
 // ---------------------------------------------------------------------------
 // Admin auth (Supabase Auth — password-only UI, fixed internal email)
 // ---------------------------------------------------------------------------
@@ -161,4 +168,30 @@ export async function bulkInsertGuests(guests) {
     .select();
   if (error) throw error;
   return (data || []).map(fromRow);
+}
+
+// ---------------------------------------------------------------------------
+// Admin: link click log (requires authenticated session — enforced by RLS)
+// ---------------------------------------------------------------------------
+export async function fetchAllLinkClicks() {
+  const { data, error } = await supabase
+    .from('guest_link_clicks')
+    .select('id, guest_id, clicked_at, user_agent, ip')
+    .order('clicked_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((row) => ({
+    id: row.id,
+    guestId: row.guest_id,
+    clickedAt: row.clicked_at ? new Date(row.clicked_at).getTime() : null,
+    userAgent: row.user_agent || '',
+    ip: row.ip || '',
+  }));
+}
+
+export function subscribeToLinkClicks(onChange) {
+  const channel = supabase
+    .channel('guest-link-clicks-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_link_clicks' }, onChange)
+    .subscribe();
+  return () => supabase.removeChannel(channel);
 }
