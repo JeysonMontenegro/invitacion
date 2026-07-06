@@ -1,12 +1,13 @@
 import { useMemo, useRef, useState } from 'react';
 import { useGuests } from '../../hooks/useGuests.js';
 import { useLinkClicks } from '../../hooks/useLinkClicks.js';
-import { createGuest, updateGuest, deleteGuest, bulkInsertGuests, adminSignOut } from '../../lib/guestsApi.js';
+import { createGuest, updateGuest, deleteGuest, bulkInsertGuests, deleteLinkClick, adminSignOut } from '../../lib/guestsApi.js';
 import { readWorkbookRows, parseGuestRows, downloadGuestTemplate } from '../../lib/importExcel.js';
 import { filterBtnStyle, badgeStyle, statusLabel, fmtDate } from '../../lib/adminStyles.js';
 import GuestModal from './GuestModal.jsx';
 import ClickLogModal from './ClickLogModal.jsx';
 import SettingsModal from './SettingsModal.jsx';
+import ConfirmDialog from './ConfirmDialog.jsx';
 
 function linkFor(token) {
   return `${location.origin}${location.pathname}?inv=${token}`;
@@ -25,6 +26,7 @@ export default function AdminDashboard({ onBackPublic }) {
   const [editingGuest, setEditingGuest] = useState(null);
   const [viewingClicksFor, setViewingClicksFor] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [confirmState, setConfirmState] = useState(null);
   const [toast, setToast] = useState('');
   const toastTimer = useRef(null);
   const fileInputRef = useRef(null);
@@ -82,10 +84,38 @@ export default function AdminDashboard({ onBackPublic }) {
     showToast('✅ Invitado guardado');
   }
 
-  async function handleDelete(g) {
-    if (!window.confirm(`¿Eliminar a "${g.name}"?`)) return;
-    await deleteGuest(g.id);
-    showToast('🗑️ Invitado eliminado');
+  function askDeleteGuest(g) {
+    setConfirmState({
+      title: '¿Eliminar invitado?',
+      message: `Se eliminará a "${g.name}" y todo su historial (confirmación, mensaje y clics). Ya no aparecerá en las estadísticas. Esta acción no se puede deshacer.`,
+      onConfirm: async () => {
+        try {
+          await deleteGuest(g.id);
+          showToast('🗑️ Invitado eliminado');
+        } catch (err) {
+          showToast('⚠️ No se pudo eliminar el invitado');
+        } finally {
+          setConfirmState(null);
+        }
+      },
+    });
+  }
+
+  function askDeleteClick(click) {
+    setConfirmState({
+      title: '¿Eliminar este clic?',
+      message: 'Se quitará este registro del historial y dejará de contar en las estadísticas del invitado. Esta acción no se puede deshacer.',
+      onConfirm: async () => {
+        try {
+          await deleteLinkClick(click.id);
+          showToast('🗑️ Clic eliminado');
+        } catch (err) {
+          showToast('⚠️ No se pudo eliminar el clic');
+        } finally {
+          setConfirmState(null);
+        }
+      },
+    });
   }
 
   function copyLink(g) {
@@ -273,7 +303,7 @@ export default function AdminDashboard({ onBackPublic }) {
                         <button type="button" title="Copiar mensaje de invitación" onClick={() => copyMessage(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#F1E9FB', cursor: 'pointer', fontSize: 15 }}>📋</button>
                         <button type="button" title="WhatsApp" onClick={() => whatsapp(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#DDF3E4', cursor: 'pointer', fontSize: 15 }}>💬</button>
                         <button type="button" title="Editar" onClick={() => openEdit(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#E7EEFB', cursor: 'pointer', fontSize: 15 }}>✏️</button>
-                        <button type="button" title="Eliminar" onClick={() => handleDelete(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#FBE0E3', cursor: 'pointer', fontSize: 15 }}>🗑️</button>
+                        <button type="button" title="Eliminar" onClick={() => askDeleteGuest(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#FBE0E3', cursor: 'pointer', fontSize: 15 }}>🗑️</button>
                       </div>
                     </td>
                   </tr>
@@ -299,11 +329,21 @@ export default function AdminDashboard({ onBackPublic }) {
           guest={viewingClicksFor}
           clicks={clicks.filter((c) => c.guestId === viewingClicksFor.id).sort((a, b) => (b.clickedAt || 0) - (a.clickedAt || 0))}
           onClose={() => setViewingClicksFor(null)}
+          onDelete={askDeleteClick}
         />
       )}
 
       {settingsOpen && (
         <SettingsModal onClose={() => setSettingsOpen(false)} showToast={showToast} />
+      )}
+
+      {confirmState && (
+        <ConfirmDialog
+          title={confirmState.title}
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
       )}
 
       {!!toast && (

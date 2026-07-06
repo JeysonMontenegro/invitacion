@@ -208,6 +208,11 @@ export function subscribeToLinkClicks(onChange) {
   return () => supabase.removeChannel(channel);
 }
 
+export async function deleteLinkClick(id) {
+  const { error } = await supabase.from('guest_link_clicks').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ---------------------------------------------------------------------------
 // Admin: general settings — RSVP deadline + baby photo (requires auth session)
 // ---------------------------------------------------------------------------

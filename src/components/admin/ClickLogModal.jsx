@@ -1,6 +1,6 @@
 import { parseDevice, fmtDate } from '../../lib/adminStyles.js';
 
-export default function ClickLogModal({ guest, clicks, onClose }) {
+export default function ClickLogModal({ guest, clicks, onClose, onDelete }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(29,29,29,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 0 }} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 460, background: '#fff', borderRadius: '26px 26px 0 0', padding: '24px 22px 30px', boxShadow: '0 -10px 40px rgba(0,0,0,.2)', animation: 'fadeUp .3s ease both', maxHeight: '92vh', overflowY: 'auto' }}>
@@ -17,12 +17,22 @@ export default function ClickLogModal({ guest, clicks, onClose }) {
 
         <div style={{ display: 'grid', gap: 10 }}>
           {clicks.map((c) => (
-            <div key={c.id} style={{ background: '#FBF3E0', borderRadius: 14, padding: '12px 14px' }}>
-              <div style={{ fontFamily: "'Fredoka'", fontWeight: 600, fontSize: 14, color: '#1D1D1D' }}>{fmtDate(c.clickedAt)}</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 13, color: '#8a6d3b' }}>
-                <span>📱 {parseDevice(c.userAgent)}</span>
-                <span>🌐 {c.ip || 'desconocida'}</span>
+            <div key={c.id} style={{ background: '#FBF3E0', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+              <div>
+                <div style={{ fontFamily: "'Fredoka'", fontWeight: 600, fontSize: 14, color: '#1D1D1D' }}>{fmtDate(c.clickedAt)}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 4, fontSize: 13, color: '#8a6d3b' }}>
+                  <span>📱 {parseDevice(c.userAgent)}</span>
+                  <span>🌐 {c.ip || 'desconocida'}</span>
+                </div>
               </div>
+              <button
+                type="button"
+                title="Eliminar este clic (no lo contará en las estadísticas)"
+                onClick={() => onDelete(c)}
+                style={{ flex: '0 0 auto', width: 30, height: 30, border: 'none', borderRadius: 8, background: '#FBE0E3', color: '#C1121F', cursor: 'pointer', fontSize: 13 }}
+              >
+                🗑️
+              </button>
             </div>
           ))}
         </div>

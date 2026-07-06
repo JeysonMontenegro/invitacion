@@ -233,8 +233,14 @@ create policy "authenticated_read_clicks" on public.guest_link_clicks
   to authenticated
   using (true);
 
+drop policy if exists "authenticated_delete_clicks" on public.guest_link_clicks;
+create policy "authenticated_delete_clicks" on public.guest_link_clicks
+  for delete
+  to authenticated
+  using (true);
+
 revoke all on public.guest_link_clicks from anon;
-grant select on public.guest_link_clicks to authenticated;
+grant select, delete on public.guest_link_clicks to authenticated;
 
 -- RPC pública: registra un clic al enlace personal. Toma IP y user-agent de
 -- los headers originales de la petición HTTP (expuestos por PostgREST vía
