@@ -50,7 +50,11 @@ export default function PublicInvitation({ guest, token, loading, notFound, onGo
             <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', width: 44, height: 24, borderRadius: '50%', background: '#E51937', boxShadow: '0 4px 10px rgba(229,25,55,.4)' }} />
           </div>
 
-          <h1 style={{ fontFamily: "'Baloo 2'", fontWeight: 800, fontSize: 'clamp(34px, 9vw, 56px)', lineHeight: 1.02, margin: '18px 0 4px', color: '#E51937', textShadow: '0 3px 0 rgba(0,0,0,.06)', animation: 'fadeUp .7s ease both .15s' }}>
+          <div style={{ fontFamily: "'Fredoka'", fontWeight: 600, color: '#8a6d3b', fontSize: 14, letterSpacing: '.02em', marginTop: 10, animation: 'fadeUp .7s ease both .1s' }}>
+            Pablo Antonio Montenegro Casados
+          </div>
+
+          <h1 style={{ fontFamily: "'Baloo 2'", fontWeight: 800, fontSize: 'clamp(34px, 9vw, 56px)', lineHeight: 1.02, margin: '10px 0 4px', color: '#E51937', textShadow: '0 3px 0 rgba(0,0,0,.06)', animation: 'fadeUp .7s ease both .15s' }}>
             ¡Pablo Antonio<br />cumple <span style={{ color: '#1D1D1D' }}>1 año!</span>
           </h1>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, margin: '6px 0 0', animation: 'fadeUp .7s ease both .2s' }}>
