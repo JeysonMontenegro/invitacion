@@ -23,6 +23,7 @@ function fromRow(row) {
     createdAt: row.created_at ? new Date(row.created_at).getTime() : null,
     updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : null,
     confirmedAt: row.confirmed_at ? new Date(row.confirmed_at).getTime() : null,
+    inviteSentAt: row.invite_sent_at ? new Date(row.invite_sent_at).getTime() : null,
   };
 }
 
@@ -39,6 +40,9 @@ function toRow(guest) {
   if (guest.comments !== undefined) row.comments = guest.comments;
   if (guest.confirmedAt !== undefined) {
     row.confirmed_at = guest.confirmedAt ? new Date(guest.confirmedAt).toISOString() : null;
+  }
+  if (guest.inviteSentAt !== undefined) {
+    row.invite_sent_at = guest.inviteSentAt ? new Date(guest.inviteSentAt).toISOString() : null;
   }
   return row;
 }

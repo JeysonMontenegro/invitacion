@@ -24,8 +24,11 @@ create table if not exists public.guests (
   comments            text not null default '',
   created_at          timestamptz not null default now(),
   updated_at          timestamptz not null default now(),
-  confirmed_at        timestamptz
+  confirmed_at        timestamptz,
+  invite_sent_at      timestamptz
 );
+
+alter table public.guests add column if not exists invite_sent_at timestamptz;
 
 create index if not exists guests_token_idx on public.guests (token);
 

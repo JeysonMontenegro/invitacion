@@ -135,6 +135,7 @@ export default function AdminDashboard({ onBackPublic }) {
     const phone = (g.phone || '').replace(/\D/g, '');
     const base = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
     window.open(base, '_blank');
+    updateGuest(g.id, { inviteSentAt: Date.now() }).catch(() => {});
   }
 
   function copyMessage(g) {
@@ -301,7 +302,20 @@ export default function AdminDashboard({ onBackPublic }) {
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                         <button type="button" title="Copiar link" onClick={() => copyLink(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#FFF1D6', cursor: 'pointer', fontSize: 15 }}>🔗</button>
                         <button type="button" title="Copiar mensaje de invitación" onClick={() => copyMessage(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#F1E9FB', cursor: 'pointer', fontSize: 15 }}>📋</button>
-                        <button type="button" title="WhatsApp" onClick={() => whatsapp(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#DDF3E4', cursor: 'pointer', fontSize: 15 }}>💬</button>
+                        <button
+                          type="button"
+                          title={g.inviteSentAt ? `Invitación ya enviada · ${fmtDate(g.inviteSentAt)}` : 'Enviar invitación por WhatsApp'}
+                          onClick={() => whatsapp(g)}
+                          style={{
+                            position: 'relative', width: 36, height: 36, border: 'none', borderRadius: 10,
+                            background: g.inviteSentAt ? '#1E9E5A' : '#DDF3E4', cursor: 'pointer', fontSize: 15,
+                          }}
+                        >
+                          💬
+                          {g.inviteSentAt && (
+                            <span style={{ position: 'absolute', top: -5, right: -5, width: 16, height: 16, borderRadius: '50%', background: '#1D1D1D', color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</span>
+                          )}
+                        </button>
                         <button type="button" title="Editar" onClick={() => openEdit(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#E7EEFB', cursor: 'pointer', fontSize: 15 }}>✏️</button>
                         <button type="button" title="Eliminar" onClick={() => askDeleteGuest(g)} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: '#FBE0E3', cursor: 'pointer', fontSize: 15 }}>🗑️</button>
                       </div>
